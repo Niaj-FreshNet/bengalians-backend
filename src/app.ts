@@ -52,7 +52,7 @@ app.use(globalErrorHandler);
 
 //test route
 const test = async (req: Request, res: Response) => {
-  const sayHi = 'Welcome to Khushbuwaala Server';
+  const sayHi = 'Welcome to Bengalians Server';
   res.send(sayHi);
 };
 app.get('/', test);
