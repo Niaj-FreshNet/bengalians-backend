@@ -17,6 +17,7 @@ export const corsOptions = {
     'http://localhost:5174',
     'https://bengalians.vercel.app',
     'https://bengalians.com',
+    'https://bengalians.khushbuwaala.com',
     'https://www.bengalians.com',
     'http://bengalians.com',
     'http://www.bengalians.com',
