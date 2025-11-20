@@ -17,9 +17,8 @@ const createCategory = async (payload: ICategory) => {
   const result = await prisma.category.create({
     data: {
       categoryName: payload.categoryName.toUpperCase(),
-      published: payload.published,
       sizes: payload.sizes,
-      unit: payload.unit,
+      published: payload.published,
       imageUrl: payload.imageUrl,
     },
   });

@@ -1,0 +1,25 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+// export default {
+//   IProduct,
+//   IUpdateProduct,
+//   IProductQuery,
+//   IProductResponse,
+//   IProductVariantResponse,
+//   IProductAnalytics,
+//   IStockUpdate,
+//   IBulkStockUpdate,
+//   IProductSearchResult,
+//   ITrendingProduct,
+//   IRelatedProductsResponse,
+//   IProductVariant,
+//   IColor,
+//   IFabric,
+//   ICollection,
+//   ILowStockProduct,
+//   IOutOfStockProduct,
+//   IStockLog,
+//   INavbarProducts,
+//   IProductListResponse,
+//   IVariantStockUpdateResult,
+// };

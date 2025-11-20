@@ -280,34 +280,34 @@ const getProductVariants = catchAsync(async (req, res) => {
 });
 
 // Update Variant Stock
-// const updateVariantStock = catchAsync(async (req, res) => {
-//   const { variantId } = req.params;
-//   const { newStock, reason } = req.body;
+const updateVariantStock = catchAsync(async (req, res) => {
+  const { variantId } = req.params;
+  const { newStock, reason } = req.body;
 
-//   const result = await ProductServices.updateVariantStock(variantId, newStock, reason);
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: 'Variant stock updated successfully',
-//     data: result,
-//   });
-// });
-
-// Update product Stock
-const updateProductStock = catchAsync(async (req, res) => {
-  const { productId } = req.params;
-  const { addedStock, reason } = req.body;
-
-  const result = await ProductServices.updateProductStock(productId, Number(addedStock), reason);
+  const result = await ProductServices.updateVariantStock(variantId, newStock, reason);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Product stock updated successfully',
+    message: 'Variant stock updated successfully',
     data: result,
   });
 });
+
+// Update product Stock
+// const updateProductStock = catchAsync(async (req, res) => {
+//   const { productId } = req.params;
+//   const { addedStock, reason } = req.body;
+
+//   const result = await ProductServices.updateProductStock(productId, Number(addedStock), reason);
+
+//   sendResponse(res, {
+//     statusCode: httpStatus.OK,
+//     success: true,
+//     message: 'Product stock updated successfully',
+//     data: result,
+//   });
+// });
 
 // Get Product Analytics
 const getProductAnalytics = catchAsync(async (req, res) => {
@@ -374,8 +374,8 @@ export const ProductController = {
   getRelatedProducts,
   searchProducts,
   getProductVariants,
-  // updateVariantStock,
-  updateProductStock,
+  updateVariantStock,
+  // updateProductStock,
   getProductAnalytics,
   getLowStockProducts,
   getBestsellers,

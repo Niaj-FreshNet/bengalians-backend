@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { Unit } from '@prisma/client';
 import {
   PERFUME_GENDERS,
   PERFORMANCE_LEVELS,
@@ -21,18 +20,16 @@ const perfumeNotesSchema = z.object({
 // Product Variant Schema
 const productVariantSchema = z.object({
   sku: z.string().min(1, 'SKU is required').max(50),
-  unit: z.nativeEnum(Unit, {
-    errorMap: () => ({ message: 'Unit must be ML, GM, or PIECE' })
-  }),
-  size: z.number()
-    .min(PRODUCT_VALIDATION.MIN_SIZE, `Size must be at least ${PRODUCT_VALIDATION.MIN_SIZE}`)
-    .max(PRODUCT_VALIDATION.MAX_SIZE, `Size cannot exceed ${PRODUCT_VALIDATION.MAX_SIZE}`),
+  size: z.string()
+    .min(1, `Size is required`).max(50),
+  color: z.string()
+    .min(1, `Color is required`).max(50),
   price: z.number()
     .min(PRODUCT_VALIDATION.MIN_PRICE, `Price must be at least ${PRODUCT_VALIDATION.MIN_PRICE}`)
     .max(PRODUCT_VALIDATION.MAX_PRICE, `Price cannot exceed ${PRODUCT_VALIDATION.MAX_PRICE}`),
-  // stock: z.number()
-  //   .min(PRODUCT_VALIDATION.MIN_STOCK, `Stock cannot be negative`)
-  //   .max(PRODUCT_VALIDATION.MAX_STOCK, `Stock cannot exceed ${PRODUCT_VALIDATION.MAX_STOCK}`),
+  stock: z.number()
+    .min(PRODUCT_VALIDATION.MIN_STOCK, `Stock cannot be negative`)
+    .max(PRODUCT_VALIDATION.MAX_STOCK, `Stock cannot exceed ${PRODUCT_VALIDATION.MAX_STOCK}`),
 });
 
 // Create Product Schema
@@ -55,16 +52,7 @@ const createProductZodSchema = z.object({
   // Perfume specifications
   origin: z.string().min(1).max(100).optional(),
   brand: z.string().min(1).max(100).optional(),
-  gender: z.enum(PERFUME_GENDERS as any).optional(),
-  perfumeNotes: perfumeNotesSchema,
-  accords: z.array(z.string().min(1))
-    .max(PRODUCT_VALIDATION.MAX_ACCORDS, `Cannot have more than ${PRODUCT_VALIDATION.MAX_ACCORDS} accords`)
-    .optional()
-    .default([]),
-  performance: z.enum(PERFORMANCE_LEVELS as any).optional(),
-  longevity: z.enum(LONGEVITY_LEVELS as any).optional(),
-  projection: z.enum(PROJECTION_LEVELS as any).optional(),
-  sillage: z.enum(SILLAGE_LEVELS as any).optional(),
+  // gender: z.enum(PERFUME_GENDERS as any).optional(),
   bestFor: z.array(z.string().min(1))
     .max(PRODUCT_VALIDATION.MAX_BEST_FOR, `Cannot have more than ${PRODUCT_VALIDATION.MAX_BEST_FOR} occasions`)
     .optional()
@@ -72,10 +60,6 @@ const createProductZodSchema = z.object({
 
   categoryId: z.string().min(1, 'Category ID is required'),
   published: z.boolean().optional().default(false),
-
-  stock: z.number()
-    .min(PRODUCT_VALIDATION.MIN_STOCK, `Stock cannot be negative`)
-    .max(PRODUCT_VALIDATION.MAX_STOCK, `Stock cannot exceed ${PRODUCT_VALIDATION.MAX_STOCK}`),
 
   variants: z.array(productVariantSchema)
     .min(1, 'At least one variant is required')
@@ -104,14 +88,6 @@ const updateProductZodSchema = z.object({
   origin: z.string().min(1).max(100).optional(),
   brand: z.string().min(1).max(100).optional(),
   gender: z.enum(PERFUME_GENDERS as any).optional(),
-  perfumeNotes: perfumeNotesSchema,
-  accords: z.array(z.string().min(1))
-    .max(PRODUCT_VALIDATION.MAX_ACCORDS, `Cannot have more than ${PRODUCT_VALIDATION.MAX_ACCORDS} accords`)
-    .optional(),
-  performance: z.enum(PERFORMANCE_LEVELS as any).optional(),
-  longevity: z.enum(LONGEVITY_LEVELS as any).optional(),
-  projection: z.enum(PROJECTION_LEVELS as any).optional(),
-  sillage: z.enum(SILLAGE_LEVELS as any).optional(),
   bestFor: z.array(z.string().min(1))
     .max(PRODUCT_VALIDATION.MAX_BEST_FOR, `Cannot have more than ${PRODUCT_VALIDATION.MAX_BEST_FOR} occasions`)
     .optional(),
@@ -144,12 +120,7 @@ const productQuerySchema = z.object({
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
   tags: z.string().optional(), // comma-separated
-  accords: z.string().optional(), // comma-separated
   bestFor: z.string().optional(), // comma-separated
-  performance: z.enum(PERFORMANCE_LEVELS as any).optional(),
-  longevity: z.enum(LONGEVITY_LEVELS as any).optional(),
-  projection: z.enum(PROJECTION_LEVELS as any).optional(),
-  sillage: z.enum(SILLAGE_LEVELS as any).optional(),
   stock: z.enum(['in', 'out']).optional(),
   sortBy: z.enum([
     'name',

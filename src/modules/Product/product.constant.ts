@@ -72,24 +72,12 @@ export const productInclude: Prisma.ProductInclude = {
   },
 
   // ✅ Include related materials
-  ProductMaterial: {
+  ProductFabric: {
     include: {
-      material: {
+      fabric: {
         select: {
           id: true,
-          materialName: true,
-        },
-      },
-    },
-  },
-
-  // ✅ Include related fragrances
-  ProductFragrance: {
-    include: {
-      fragrance: {
-        select: {
-          id: true,
-          fragranceName: true,
+          fabricName: true,
         },
       },
     },
@@ -126,8 +114,7 @@ export const productInclude: Prisma.ProductInclude = {
 // Detailed include for single product view
 export const productDetailInclude: Prisma.ProductInclude = {
   category: true,
-  ProductMaterial: { include: { material: true } },
-  ProductFragrance: { include: { fragrance: true } },
+  ProductFabric: { include: { fabric: true } },
   Review: {
     where: { isPublished: true },
     include: {

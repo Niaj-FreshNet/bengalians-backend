@@ -59,7 +59,7 @@ export const DiscountServices = {
     return prisma.discount.findMany({
       include: {
         product: { select: { name: true } },
-        variant: { select: { sku: true, size: true, unit: true } },
+        variant: { select: { sku: true, size: true,} },
       },
       orderBy: { createdAt: "desc" },
     });

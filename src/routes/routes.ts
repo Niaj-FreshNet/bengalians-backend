@@ -14,8 +14,9 @@ import { WishlistRoutes } from '../modules/Wishlist/wishlist.route';
 import { SalesRoutes } from '../modules/Sales/sales.routes';
 import { ExpenseRoutes } from '../modules/Expense/expense.route';
 import { CartItemRoutes } from '../modules/Cart/cart.routes';
-import { FragranceRoutes } from '../modules/Fragrance/fragrance.routes';
+import { FabricRoutes } from '../modules/Fabric/fabric.routes';
 import { DiscountRoutes } from '../modules/Discount/discount.routes';
+import { CollectionRoutes } from '../modules/Collection/collection.routes';
 
 const router = express.Router();
 
@@ -29,12 +30,16 @@ const moduleRoutes = [
     route: CategoryRoutes,
   },
   {
+    path: '/collection',
+    route: CollectionRoutes,
+  },
+  {
     path: '/materials',
     route: MaterialRoutes,
   },
   {
-    path: '/fragrances',
-    route: FragranceRoutes,
+    path: '/fabrics',
+    route: FabricRoutes,
   },
   {
     path: '/products',

@@ -146,9 +146,6 @@ export const validateStockLevels = (variants: IProductVariant[]): { isValid: boo
     if (variant.price <= 0) {
       errors.push(`Variant ${index + 1}: Price must be greater than zero`);
     }
-    if (variant.size <= 0) {
-      errors.push(`Variant ${index + 1}: Size must be greater than zero`);
-    }
   });
   
   return {

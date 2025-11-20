@@ -1,11 +1,39 @@
+import { ClothingSize, Gender, FitType } from '@prisma/client';
 
-// Base Product Variant Interface (aligned with schema)
+// Base Product Variant Interface (aligned with apparel schema)
 export interface IProductVariant {
   sku: string;
-  unit: string;
-  size: number; // Changed from string to number as per schema
+  size: ClothingSize; // Changed to ClothingSize enum
+  color: string; // Required for apparel
   price: number;
-  stock: number; // Changed from quantity to stock as per schema
+  costPrice?: number;
+  stock: number; // Stock at variant level (required)
+  images?: string[]; // Variant-specific images
+}
+
+// Color Interface
+export interface IColor {
+  id: string;
+  colorName: string;
+  hexCode?: string;
+  imageUrl?: string;
+}
+
+// Fabric Interface
+export interface IFabric {
+  id: string;
+  fabricName: string;
+  imageUrl?: string;
+  description?: string;
+}
+
+// Collection Interface
+export interface ICollection {
+  id: string;
+  collectionName: string;
+  imageUrl?: string;
+  description?: string;
+  season?: string;
 }
 
 // Product Creation Interface
@@ -18,35 +46,31 @@ export interface IProduct {
   videoUrl?: string;
   tags: string[];
 
-  // Perfume specifications
-  origin?: string;
+  // Apparel specifications
   brand?: string;
-  gender?: string;
-  perfumeNotes?: {
-    top: string[];
-    middle: string[];
-    base: string[];
-  };
-  accords: string[];
-  performance?: string;
-  longevity?: string;
-  projection?: string;
-  sillage?: string;
-  bestFor: string[];
+  gender?: Gender; // Enum: MEN, WOMEN, UNISEX, BOYS, GIRLS
+  fitType?: FitType; // Enum: SLIM, REGULAR, RELAXED, OVERSIZED, TAILORED
+  pattern?: string; // e.g., "Solid", "Striped", "Floral"
+  neckline?: string; // e.g., "Round", "V-neck", "Collar"
+  sleeveType?: string; // e.g., "Full Sleeve", "Half Sleeve", "Sleeveless"
+  occasion?: string[]; // e.g., ["Casual", "Formal", "Party"]
+  careInstructions?: string; // Washing and care details
+  sustainable?: boolean; // Eco-friendly product flag
+  madeIn?: string; // Country of origin
 
   categoryId: string;
+  collectionId?: string; // Optional collection reference
   published: boolean;
 
-  materialIds: string[];
-  fragranceIds: string[];
+  fabricIds?: string[]; // Array of fabric IDs
+  materialIds?: string[]; // Array of fabric IDs
+  
+  reviews?: IReview[];
+  averageRating?: number;
+  reviewCount?: number;
 
-  reviews: IReview[];
-  averageRating: number;
-  reviewCount: number;
-
-  supplier: string;
-  stock: number;
-  variants: IProductVariant[];
+  supplier?: string;
+  variants: IProductVariant[]; // Required - must have at least one variant
 }
 
 // Product Update Interface
@@ -58,50 +82,51 @@ export interface IUpdateProduct {
   videoUrl?: string;
   tags?: string[];
 
-  // Perfume specifications
-  origin?: string;
+  // Apparel specifications
   brand?: string;
-  gender?: string;
-  perfumeNotes?: {
-    top: string[];
-    middle: string[];
-    base: string[];
-  };
-  accords?: string[];
-  performance?: string;
-  longevity?: string;
-  projection?: string;
-  sillage?: string;
-  bestFor?: string[];
+  gender?: Gender;
+  fitType?: FitType;
+  pattern?: string;
+  neckline?: string;
+  sleeveType?: string;
+  occasion?: string[];
+  careInstructions?: string;
+  sustainable?: boolean;
+  madeIn?: string;
 
   categoryId?: string;
+  collectionId?: string;
   published?: boolean;
 
-  materialIds: string[];
-  fragranceIds: string[];
+  fabricIds?: string[];
 
   // Image handling
   imagesToKeep?: string[];
   newImages?: string[];
 
-  stock?: number;
   variants?: IProductVariant[];
+  supplier?: string;
 }
 
 // Query Interfaces
 export interface IProductQuery {
   search?: string;
-  categories: { id: string; name: string }[]; // update here
+  category?: string; // Single category ID
+  categories?: { id: string; name: string }[]; // Multiple categories
+  collection?: string; // Collection ID
   brand?: string;
-  gender?: string;
-  origin?: string;
+  gender?: Gender | string;
+  fitType?: FitType | string;
+  color?: string; // Color name or ID
+  size?: ClothingSize | string;
+  pattern?: string;
+  occasion?: string;
   minPrice?: number;
   maxPrice?: number;
   tags?: string;
-  accords?: string;
-  bestFor?: string;
   stock?: 'in' | 'out';
-  sortBy?: 'name' | 'price_asc' | 'price_desc' | 'newest' | 'oldest' | 'popularity';
+  sustainable?: boolean;
+  sortBy?: 'name' | 'price_asc' | 'price_desc' | 'newest' | 'oldest' | 'popularity' | 'rating_asc' | 'rating_desc';
   page?: number;
   limit?: number;
   [key: string]: unknown;
@@ -136,44 +161,50 @@ export interface IProductResponse {
   salesCount: number;
   published: boolean;
 
-  // Perfume specifications
-  origin?: string;
+  // Apparel specifications
   brand?: string;
-  gender?: string;
-  perfumeNotes?: {
-    top: string[];
-    middle: string[];
-    base: string[];
-  };
-  accords: string[];
-  performance?: string;
-  longevity?: string;
-  projection?: string;
-  sillage?: string;
-  bestFor: string[];
+  gender?: Gender;
+  fitType?: FitType;
+  pattern?: string;
+  neckline?: string;
+  sleeveType?: string;
+  occasion?: string[];
+  careInstructions?: string;
+  sustainable?: boolean;
+  madeIn?: string;
 
   categoryId: string;
   category?: {
+    id: string;
     categoryName: string;
-    imageUrl: string;
+    imageUrl?: string;
+    description?: string;
   };
 
-  materialIds: string[];
-  fragranceIds: string[];
+  collectionId?: string;
+  collection?: ICollection;
+
+  fabricIds?: string[];
+  fabrics?: IFabric[];
 
   reviews: IReview[];
   averageRating: number;
   reviewCount: number;
 
-  supplier: string;
+  supplier?: string;
 
   variants: IProductVariantResponse[];
 
   // Computed fields
   minPrice: number;
   maxPrice: number;
-  totalStock: number;
-  inStock: boolean;
+  totalStock: number; // Sum of all variant stocks
+  inStock: boolean; // True if any variant has stock > 0
+  availableSizes?: ClothingSize[]; // Unique sizes from variants
+  availableColors?: string[]; // Unique colors from variants
+
+  // Related products (optional, included in detail view)
+  relatedProducts?: IProductResponse[];
 
   createdAt: Date;
   updatedAt: Date;
@@ -182,10 +213,12 @@ export interface IProductResponse {
 export interface IProductVariantResponse {
   id: string;
   sku: string;
-  unit: string;
-  size: number;
+  size: ClothingSize;
+  color: string; // Populated color object
   price: number;
+  costPrice?: number;
   stock: number;
+  images?: string[];
   productId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -197,8 +230,8 @@ export interface IProductAnalytics {
   publishedProducts: number;
   unpublishedProducts: number;
   totalVariants: number;
-  lowStockProducts: number;
-  outOfStockProducts: number;
+  lowStockVariants: number; // Variants with stock <= threshold
+  outOfStockVariants: number; // Variants with stock = 0
   totalValue: number;
   averagePrice: number;
   topCategories: Array<{
@@ -211,14 +244,28 @@ export interface IProductAnalytics {
     productCount: number;
     percentage: number;
   }>;
+  topCollections?: Array<{
+    collectionName: string;
+    productCount: number;
+    percentage: number;
+  }>;
 }
 
 // Stock Update Interface
 export interface IStockUpdate {
-  productId: string;
-  variantId: string;
-  newStock: number;
-  reason?: string;
+  variantId: string; // Now required - stock is at variant level
+  addedStock: number; // Positive or negative number to add/subtract
+  reason?: string; // e.g., "RESTOCK", "SALE", "RETURN", "DAMAGED", "ADJUSTMENT"
+  notes?: string; // Additional context
+}
+
+// Bulk Stock Update Interface
+export interface IBulkStockUpdate {
+  updates: Array<{
+    variantId: string;
+    addedStock: number;
+    reason?: string;
+  }>;
 }
 
 // Search Result Interface
@@ -233,12 +280,15 @@ export interface IProductSearchResult {
   filters: {
     brands: string[];
     categories: { id: string; name: string }[];
+    collections: { id: string; name: string }[];
     priceRange: {
       min: number;
       max: number;
     };
-    origins: string[];
-    accords: string[];
+    genders: Gender[];
+    fitTypes: FitType[];
+    colors?: IColor[];
+    sizes?: ClothingSize[];
   };
 }
 
@@ -252,8 +302,89 @@ export interface ITrendingProduct extends IProductResponse {
 export interface IRelatedProductsResponse {
   sameBrand: IProductResponse[];
   sameCategory: IProductResponse[];
-  similarAccords: IProductResponse[];
+  sameGender: IProductResponse[]; // New for apparel
+  sameCollection: IProductResponse[]; // New for apparel
   recentlyViewed?: IProductResponse[];
+}
+
+// Low Stock Product Interface
+export interface ILowStockProduct {
+  id: string;
+  name: string;
+  category: string;
+  lowStockVariants: Array<{
+    id: string;
+    sku: string;
+    size: ClothingSize;
+    color: string;
+    stock: number;
+  }>;
+}
+
+// Out of Stock Product Interface
+export interface IOutOfStockProduct {
+  id: string;
+  name: string;
+  category: string;
+  variants: Array<{
+    id: string;
+    sku: string;
+    size: ClothingSize;
+    color: string;
+    stock: number;
+  }>;
+}
+
+// Stock Log Interface
+export interface IStockLog {
+  id: string;
+  productId: string;
+  variantId: string;
+  change: number;
+  reason: string;
+  notes?: string;
+  createdAt: string;
+  product: {
+    name: string;
+  };
+  variant?: {
+    sku: string;
+    size: ClothingSize;
+    color: string;
+  };
+}
+
+// Navbar Products Interface
+export interface INavbarProducts {
+  trendingByCategory: Record<string, Array<{ id: string; name: string }>>;
+  overallTrending: Array<{ id: string; name: string }>;
+}
+
+// Product by Category/Collection Response
+export interface IProductListResponse {
+  data: IProductResponse[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPage: number;
+  };
+}
+
+// Variant Stock Update Result
+export interface IVariantStockUpdateResult {
+  id: string;
+  sku: string;
+  size: ClothingSize;
+  color: string;
+  price: number;
+  compareAtPrice?: number;
+  costPrice?: number;
+  stock: number;
+  images?: string[];
+  productId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // export default {
@@ -264,8 +395,18 @@ export interface IRelatedProductsResponse {
 //   IProductVariantResponse,
 //   IProductAnalytics,
 //   IStockUpdate,
+//   IBulkStockUpdate,
 //   IProductSearchResult,
 //   ITrendingProduct,
 //   IRelatedProductsResponse,
-//   IProductVariant
+//   IProductVariant,
+//   IColor,
+//   IFabric,
+//   ICollection,
+//   ILowStockProduct,
+//   IOutOfStockProduct,
+//   IStockLog,
+//   INavbarProducts,
+//   IProductListResponse,
+//   IVariantStockUpdateResult,
 // };

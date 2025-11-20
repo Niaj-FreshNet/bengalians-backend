@@ -29,9 +29,11 @@ enum SaleType {
 enum OrderStatus {
   PENDING
   PROCESSING
+  SHIPPED
   DELIVERED
   COMPLETED
   CANCEL
+  RETURNED
 }
 
 enum ExpenseStatus {
@@ -41,16 +43,38 @@ enum ExpenseStatus {
   CANCELED
 }
 
-enum Unit {
-  ML
-  GM
-  PIECE
-}
-
 enum CartItemStatus {
   IN_CART
   ORDERED
   SOLD
+}
+
+enum Gender {
+  MEN
+  WOMEN
+  UNISEX
+  BOYS
+  GIRLS
+}
+
+enum ClothingSize {
+  XXS
+  XS
+  S
+  M
+  L
+  XL
+  XXL
+  XXXL
+  CUSTOM
+}
+
+enum FitType {
+  SLIM
+  REGULAR
+  RELAXED
+  OVERSIZED
+  TAILORED
 }
 
 model User {
@@ -75,8 +99,9 @@ model User {
   orderItems     CartItem[]
   wishlist       Wishlist[]
   Expense        Expense[]
-  customerOrders Order[]    @relation("CustomerOrders")
-  salesmanOrders Order[]    @relation("SalesmanOrders")
+  customerOrders Order[]         @relation("CustomerOrders")
+  salesmanOrders Order[]         @relation("SalesmanOrders")
+  comboWishlists ComboWishlist[]
 
   @@map("users")
 }
@@ -85,14 +110,42 @@ model Category {
   id           String    @id @default(auto()) @map("_id") @db.ObjectId
   categoryName String    @unique
   imageUrl     String?
-  sizes        String[]  @default([])
-  unit         String?
+  description  String?
+  sizes        String[]
   published    Boolean   @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   Product      Product[]
 
   @@map("categories")
+}
+
+model Collection {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  collectionName String    @unique
+  imageUrl       String?
+  description    String?
+  season         String? // e.g., "Spring 2024", "Winter Collection"
+  published      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  Product        Product[]
+
+  @@map("collections")
+}
+
+model Fabric {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  fabricName  String   @unique
+  imageUrl    String?
+  description String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ProductFabric ProductFabric[]
+
+  @@map("fabrics")
 }
 
 model Material {
@@ -108,18 +161,19 @@ model Material {
   @@map("materials")
 }
 
-model Fragrance {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  fragranceName String   @unique
-  imageUrl      String?
-  published     Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+// model Color {
+//   id        String   @id @default(auto()) @map("_id") @db.ObjectId
+//   colorName String   @unique
+//   hexCode   String? // e.g., "#FF5733"
+//   imageUrl  String? // optional swatch image
+//   published Boolean  @default(false)
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
 
-  ProductFragrance ProductFragrance[]
+//   ProductVariant ProductVariant[]
 
-  @@map("fragrances")
-}
+//   @@map("colors")
+// }
 
 model Product {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -133,45 +187,44 @@ model Product {
   salesCount   Int      @default(0)
   published    Boolean  @default(false)
 
-  // Perfume specifications
-  origin       String?
-  brand        String?
-  gender       String?
-  perfumeNotes Json? // { top: [...], middle: [...], base: [...] }
-  accords      String[]
-  performance  String?
-  longevity    String?
-  projection   String?
-  sillage      String?
-  bestFor      String[]
+  // Apparel specifications
+  brand            String?
+  gender           Gender?
+  fitType          FitType?
+  pattern          String? // e.g., "Solid", "Striped", "Floral"
+  neckline         String? // e.g., "Round", "V-neck", "Collar"
+  sleeveType       String? // e.g., "Full Sleeve", "Half Sleeve", "Sleeveless"
+  occasion         String[] // e.g., ["Casual", "Formal", "Party"]
+  careInstructions String? // washing and care details
+  madeIn           String? // country of origin
 
   categoryId String   @db.ObjectId
   category   Category @relation(fields: [categoryId], references: [id])
 
-  ProductMaterial  ProductMaterial[]
-  ProductFragrance ProductFragrance[]
+  collectionId String?     @db.ObjectId
+  collection   Collection? @relation(fields: [collectionId], references: [id])
 
-  // Variants and combos
-  variants      ProductVariant[]
-  comboVariants ComboVariant[]
+  ProductFabric ProductFabric[]
 
-  supplier  String?
-  // Stock for the product (aggregate for all variants)
-  stock     Float      @default(0) // e.g., 1 kg or 1000 ml
+  ProductMaterial ProductMaterial[]
+
+  // Variants (different sizes and colors with individual stock)
+  variants ProductVariant[]
+
+  supplier String?
+
+  // Remove stock from product level - now only in variants
   stocklogs StockLog[]
 
   // Discounts (can be applied per product)
   discounts Discount[]
 
-  // Related products (self-relation)
-  // relatedProducts Product[] @relation("RelatedProducts", references: [id])
-  // relatedTo       Product[] @relation("RelatedProducts")  
-
   // Reviews
   Review Review[]
 
-  orderItems CartItem[]
-  wishlist   Wishlist[]
+  orderItems    CartItem[]
+  wishlist      Wishlist[]
+  comboVariants ComboVariant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -179,7 +232,19 @@ model Product {
   @@map("products")
 }
 
-// Junction tables
+// Junction table for product fabrics
+model ProductFabric {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  productId String @db.ObjectId
+  fabricId  String @db.ObjectId
+
+  product Product @relation(fields: [productId], references: [id])
+  fabric  Fabric  @relation(fields: [fabricId], references: [id])
+
+  @@unique([productId, fabricId])
+  @@map("product_fabrics")
+}
+
 model ProductMaterial {
   id         String @id @default(auto()) @map("_id") @db.ObjectId
   productId  String @db.ObjectId
@@ -192,35 +257,33 @@ model ProductMaterial {
   @@map("product_materials")
 }
 
-model ProductFragrance {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
-  productId   String @db.ObjectId
-  fragranceId String @db.ObjectId
-
-  product   Product   @relation(fields: [productId], references: [id])
-  fragrance Fragrance @relation(fields: [fragranceId], references: [id])
-
-  @@unique([productId, fragranceId])
-  @@map("product_fragrances")
-}
-
 model ProductVariant {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  productId String   @db.ObjectId
-  sku       String   @unique
-  unit      Unit
-  size      Float // e.g. 3, 6, 12 ml or 100, 500 gm
-  price     Float
-  // stock     Float // tracks ml or gm left in inventory
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  productId String @db.ObjectId
+  sku       String @unique
+
+  // Size and color
+  size    ClothingSize
+  color   String
+
+  // Pricing
+  price          Float
+  costPrice      Float? // for profit calculation
+
+  // Stock management (per variant)
+  stock             Int  @default(0) // quantity in stock
+
+  // Variant-specific details
+  images  String[] @default([]) // variant-specific images
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  product       Product        @relation(fields: [productId], references: [id])
-  // wishlist wishlist[]
-  comboVariants ComboVariant[]
+  product Product @relation(fields: [productId], references: [id])
 
-  orderItems CartItem[]
-  stocklogs  StockLog[]
+  orderItems    CartItem[]
+  stocklogs     StockLog[]
+  comboVariants ComboVariant[]
 
   // Discounts (can be applied per variant)
   discounts Discount[]
@@ -229,18 +292,29 @@ model ProductVariant {
 }
 
 model ComboProduct {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  name         String
-  description  String?
-  primaryImage String
-  otherImages  String[]
-  price        Float
-  published    Boolean  @default(false)
-  tags         String[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  slug           String   @unique
+  description    String?
+  primaryImage   String
+  otherImages    String[]
+  price          Float // combo price (usually discounted)
+  compareAtPrice Float? // sum of individual prices
+  published      Boolean  @default(false)
+  tags           String[]
+  salesCount     Int      @default(0)
 
-  variants ComboVariant[]
+  // Combo-specific
+  validFrom   DateTime?
+  validUntil  DateTime?
+  maxQuantity Int?      @default(100) // limit combo purchases
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants      ComboVariant[]
+  comboOrders   ComboOrderItem[]
+  comboWishlist ComboWishlist[]
 
   @@map("combo_products")
 }
@@ -250,13 +324,43 @@ model ComboVariant {
   comboId   String @db.ObjectId
   productId String @db.ObjectId
   variantId String @db.ObjectId
-  quantity  Int    @default(1)
+  quantity  Int    @default(1) // how many of this variant in the combo
 
-  combo   ComboProduct   @relation(fields: [comboId], references: [id])
+  combo   ComboProduct   @relation(fields: [comboId], references: [id], onDelete: Cascade)
   product Product        @relation(fields: [productId], references: [id])
   variant ProductVariant @relation(fields: [variantId], references: [id])
 
+  @@unique([comboId, variantId]) // same variant can't be in combo twice
   @@map("combo_variants")
+}
+
+model ComboOrderItem {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  orderId  String @db.ObjectId
+  comboId  String @db.ObjectId
+  quantity Int
+  price    Float // price at time of purchase
+
+  order Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  combo ComboProduct @relation(fields: [comboId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("combo_order_items")
+}
+
+model ComboWishlist {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  comboId   String       @db.ObjectId
+  userId    String       @db.ObjectId
+  user      User         @relation(fields: [userId], references: [id])
+  combo     ComboProduct @relation(fields: [comboId], references: [id])
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([comboId, userId])
+  @@map("combo_wishlist_items")
 }
 
 model Order {
@@ -269,13 +373,14 @@ model Order {
   cartItems   Json?
   status      OrderStatus @default(PENDING)
   orderSource OrderSource
-  productIds String[]
+  productIds  String[]
 
   // Website orders
   customerId String? @db.ObjectId
   customer   User?   @relation("CustomerOrders", fields: [customerId], references: [id])
 
   shippingCost    Float   @default(0)
+  trackingNumber  String? // shipping tracking
   additionalNotes String?
   shipping        Json?
   billing         Json?
@@ -294,6 +399,8 @@ model Order {
   // Relation to CartItem
   orderItems CartItem[] @relation("Order_CartItems")
 
+  comboOrderItem ComboOrderItem[]
+
   payments       Payment[]
   orderDiscounts OrderDiscount[]
 
@@ -305,20 +412,18 @@ model Order {
 
 model CartItem {
   id        String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String? @db.ObjectId // optional, for guest carts
+  userId    String? @db.ObjectId
   productId String  @db.ObjectId
-  variantId String? @db.ObjectId
-  size      Int?
-  unit      String?
+  variantId String  @db.ObjectId // Required for apparel
   quantity  Int
   price     Float
 
-  status CartItemStatus @default(IN_CART) // IN_CART, ORDERED, SOLD
+  status CartItemStatus @default(IN_CART)
 
   // Relations
-  product Product         @relation(fields: [productId], references: [id])
-  variant ProductVariant? @relation(fields: [variantId], references: [id])
-  user    User?           @relation(fields: [userId], references: [id])
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+  user    User?          @relation(fields: [userId], references: [id])
 
   orderId String? @db.ObjectId
   order   Order?  @relation("Order_CartItems", fields: [orderId], references: [id], onDelete: Cascade)
@@ -330,42 +435,48 @@ model CartItem {
 }
 
 model StockLog {
-  id        String          @id @default(auto()) @map("_id") @db.ObjectId
-  productId String          @db.ObjectId
-  variantId String?         @db.ObjectId
-  product   Product         @relation(fields: [productId], references: [id])
-  variant   ProductVariant? @relation(fields: [variantId], references: [id])
-  change    Float // +10 (restock), -2 (sold), etc.
-  reason    String // e.g. SALE, RETURN, ADJUSTMENT
-  createdAt DateTime        @default(now())
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  productId String         @db.ObjectId
+  variantId String         @db.ObjectId // Required - stock is always per variant
+  product   Product        @relation(fields: [productId], references: [id])
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  change    Int // +10 (restock), -2 (sold), etc.
+  reason    String // e.g. SALE, RETURN, ADJUSTMENT, DAMAGED, RESTOCK
+  notes     String? // additional context
+  createdAt DateTime       @default(now())
 
   @@map("stock_logs")
 }
 
 model Payment {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  orderId   String   @db.ObjectId
-  amount    Float
-  method    String
-  status    String
-  createdAt DateTime @default(now())
-  order     Order    @relation(fields: [orderId], references: [id])
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId       String   @db.ObjectId
+  amount        Float
+  method        String
+  status        String
+  transactionId String? // payment gateway transaction ID
+  createdAt     DateTime @default(now())
+  order         Order    @relation(fields: [orderId], references: [id])
 
   @@map("payments")
 }
 
 model Discount {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  productId String    @db.ObjectId
-  variantId String?   @db.ObjectId // null means discount is for the whole product
-  code      String?   @unique // optional promo code
-  type      String // "percentage" | "fixed"
-  value     Float
-  maxUsage  Int? // optional
-  startDate DateTime?
-  endDate   DateTime?
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  productId         String?   @db.ObjectId // null means site-wide discount
+  variantId         String?   @db.ObjectId
+  code              String?   @unique
+  name              String? // display name for discount
+  type              String // "percentage" | "fixed" | "buy_x_get_y"
+  value             Float
+  minPurchaseAmount Float? // minimum order value
+  maxUsage          Int? // total usage limit
+  maxUsagePerUser   Int? // per-user limit
+  startDate         DateTime?
+  endDate           DateTime?
+  isActive          Boolean   @default(true)
 
-  product Product         @relation(fields: [productId], references: [id])
+  product Product?        @relation(fields: [productId], references: [id])
   variant ProductVariant? @relation(fields: [variantId], references: [id])
 
   OrderDiscount OrderDiscount[]
@@ -409,16 +520,16 @@ model Blog {
   title           String
   content         String
   imageUrl        String?
-  imageAltText    String? // New field
+  imageAltText    String?
   others          String?
   isPublish       Boolean  @default(false)
   userId          String   @db.ObjectId
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  metaTitle       String? // New field
-  metaDescription String? // New field
-  keywords        String? // New fields
-  slug            String   @unique // New field
+  metaTitle       String?
+  metaDescription String?
+  keywords        String?
+  slug            String   @unique
 
   user User @relation(fields: [userId], references: [id])
 
